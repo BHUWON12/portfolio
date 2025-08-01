@@ -1,96 +1,260 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Digital Consciousness Design System - The Neural Architecture */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* The Void - Absolute Cosmic Canvas */
+    --void: 0 0% 4%; /* #0A0A0A - The cosmic darkness */
+    --void-deep: 0 0% 2%; /* Deeper void for overlays */
+    --void-light: 0 0% 8%; /* Lighter void for surfaces */
+    
+    /* Cosmic Energy - The Lifeblood */
+    --cosmic: 180 100% 50%; /* #00FFFF - Pure cyan consciousness */
+    --cosmic-glow: 180 100% 60%; /* Brighter for active states */
+    --cosmic-dim: 180 100% 30%; /* Dimmer for secondary elements */
+    --cosmic-whisper: 180 100% 15%; /* Subtle background glow */
+    
+    /* Neural Pathways - The Connection Matrix */
+    --neural: 180 20% 70%; /* Neutral connection lines */
+    --neural-active: 180 80% 60%; /* Active pathway glow */
+    --neural-dim: 180 10% 40%; /* Dormant connections */
+    
+    /* Consciousness Text Layers */
+    --consciousness-primary: 0 0% 95%; /* Primary thought streams */
+    --consciousness-secondary: 0 0% 70%; /* Secondary information */
+    --consciousness-whisper: 0 0% 50%; /* Subtle details */
+    
+    /* Holographic Surfaces */
+    --surface: 180 10% 8%; /* Interactive surfaces */
+    --surface-glow: 180 30% 12%; /* Glowing surfaces */
+    --surface-border: 180 20% 20%; /* Surface boundaries */
+    
+    /* Quantum Gradients */
+    --gradient-cosmic: linear-gradient(135deg, hsl(var(--cosmic)) 0%, hsl(var(--cosmic-dim)) 100%);
+    --gradient-void: linear-gradient(180deg, hsl(var(--void)) 0%, hsl(var(--void-deep)) 100%);
+    --gradient-neural: radial-gradient(circle, hsl(var(--cosmic-whisper)) 0%, transparent 70%);
+    
+    /* Animation Timings - The Breath of Consciousness */
+    --pulse-slow: 4s;
+    --pulse-medium: 2s;
+    --pulse-fast: 1s;
+    --transition-silk: 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    --transition-neural: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Shadows - Dimensional Depth */
+    --shadow-neural: 0 0 20px hsl(var(--cosmic) / 0.3);
+    --shadow-consciousness: 0 0 40px hsl(var(--cosmic) / 0.2);
+    --shadow-void: 0 0 60px hsl(var(--void) / 0.8);
+    
+    /* Core Design System Mapping */
+    --background: var(--void);
+    --foreground: var(--consciousness-primary);
+    --primary: var(--cosmic);
+    --primary-foreground: var(--void);
+    --secondary: var(--surface);
+    --secondary-foreground: var(--consciousness-secondary);
+    --muted: var(--void-light);
+    --muted-foreground: var(--consciousness-whisper);
+    --accent: var(--cosmic-glow);
+    --accent-foreground: var(--void);
+    --border: var(--surface-border);
+    --input: var(--surface);
+    --ring: var(--cosmic);
+    --radius: 0.75rem;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+  }
+}
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+/* Typography - Neural Pathways */
+@layer base {
+  * {
+    @apply border-border;
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+    overflow-x: hidden;
+  }
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+  .font-consciousness {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+  }
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+  .font-neural {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+}
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+/* Consciousness Animations - The Breath of Digital Life */
+@layer utilities {
+  .animate-consciousness-pulse {
+    animation: consciousness-pulse var(--pulse-slow) ease-in-out infinite;
+  }
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+  .animate-neural-flow {
+    animation: neural-flow var(--pulse-medium) ease-in-out infinite;
+  }
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+  .animate-cosmic-glow {
+    animation: cosmic-glow var(--pulse-fast) ease-in-out infinite alternate;
+  }
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+  .animate-thought-materialize {
+    animation: thought-materialize var(--transition-silk) ease-out forwards;
+  }
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+  .animate-synaptic-fire {
+    animation: synaptic-fire 0.8s ease-out forwards;
+  }
+}
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+/* Keyframes - The Mathematics of Digital Consciousness */
+@keyframes consciousness-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+    filter: brightness(1.2);
+  }
+}
+
+@keyframes neural-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes cosmic-glow {
+  0% {
+    box-shadow: 0 0 20px hsl(var(--cosmic) / 0.3);
+    filter: brightness(1);
+  }
+  100% {
+    box-shadow: 0 0 40px hsl(var(--cosmic) / 0.6);
+    filter: brightness(1.3);
+  }
+}
+
+@keyframes thought-materialize {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes synaptic-fire {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+/* Neural Network Components */
+@layer components {
+  .consciousness-node {
+    @apply relative rounded-full border-2 transition-all duration-500;
+    border-color: hsl(var(--cosmic) / 0.5);
+    background: radial-gradient(circle, hsl(var(--cosmic) / 0.1) 0%, transparent 70%);
+    backdrop-filter: blur(10px);
+  }
+
+  .consciousness-node:hover {
+    border-color: hsl(var(--cosmic));
+    background: radial-gradient(circle, hsl(var(--cosmic) / 0.2) 0%, transparent 70%);
+    box-shadow: var(--shadow-neural);
+  }
+
+  .consciousness-node.active {
+    border-color: hsl(var(--cosmic-glow));
+    background: radial-gradient(circle, hsl(var(--cosmic) / 0.3) 0%, transparent 70%);
+    box-shadow: var(--shadow-consciousness);
+  }
+
+  .neural-pathway {
+    @apply absolute transition-all duration-700;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      hsl(var(--cosmic) / 0.3) 50%, 
+      transparent 100%
+    );
+    height: 2px;
+    filter: blur(0.5px);
+  }
+
+  .neural-pathway.active {
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      hsl(var(--cosmic)) 20%,
+      hsl(var(--cosmic-glow)) 50%, 
+      hsl(var(--cosmic)) 80%,
+      transparent 100%
+    );
+    height: 3px;
+    filter: blur(0);
+    box-shadow: 0 0 10px hsl(var(--cosmic) / 0.6);
+  }
+
+  .thought-bubble {
+    @apply rounded-xl border backdrop-blur-xl;
+    background: hsl(var(--surface) / 0.8);
+    border-color: hsl(var(--surface-border));
+    box-shadow: var(--shadow-void);
+  }
+
+  .holographic-surface {
+    @apply relative overflow-hidden;
+    background: linear-gradient(135deg, 
+      hsl(var(--surface)) 0%, 
+      hsl(var(--surface-glow)) 100%
+    );
+  }
+
+  .holographic-surface::before {
+    content: '';
+    @apply absolute inset-0 opacity-20;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2300FFFF' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    animation: holographic-drift 20s linear infinite;
+  }
+
+  @keyframes holographic-drift {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(60px, 60px); }
   }
 }
 
