@@ -59,21 +59,21 @@ const Index = () => {
       )}
 
       {/* Brand Signature */}
-      <div className="absolute bottom-6 left-6 z-20">
+      <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 z-20">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 bg-cosmic rounded-full animate-consciousness-pulse" />
-          <span className="text-consciousness-whisper font-neural text-sm">
-            Powered by <span className="text-cosmic">Vastrimo</span>
+          <span className="text-consciousness-whisper font-neural text-xs md:text-sm">
+            Digital Portfolio by <span className="text-cosmic">Bhuwan Singh</span>
           </span>
         </div>
       </div>
 
       {/* Consciousness Indicator */}
-      <div className="absolute top-6 left-6 z-20">
-        <div className="flex items-center gap-3 thought-bubble px-4 py-2">
-          <div className="w-3 h-3 bg-cosmic rounded-full animate-consciousness-pulse" />
-          <span className="text-consciousness-primary font-neural text-sm">
-            Digital Consciousness Online
+      <div className="absolute top-4 md:top-6 left-4 md:left-6 z-20">
+        <div className="flex items-center gap-3 thought-bubble px-3 md:px-4 py-2">
+          <div className="w-2 h-2 md:w-3 md:h-3 bg-cosmic rounded-full animate-consciousness-pulse" />
+          <span className="text-consciousness-primary font-neural text-xs md:text-sm">
+            Neural Network Online
           </span>
         </div>
       </div>

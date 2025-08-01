@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { type ConsciousnessNode } from '@/data/consciousness';
 import { ExternalLink, Github, Globe, Mail, Phone, Linkedin } from 'lucide-react';
 
@@ -9,6 +9,19 @@ interface ConsciousnessPanelProps {
 
 const ConsciousnessPanel: React.FC<ConsciousnessPanelProps> = ({ node, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (node) {
@@ -18,25 +31,43 @@ const ConsciousnessPanel: React.FC<ConsciousnessPanelProps> = ({ node, onClose }
     }
   }, [node]);
 
+  // Handle click outside to close panel
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    if (isVisible) {
+      // Add delay to prevent immediate closing when opening
+      const timer = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 100);
+
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isVisible, onClose]);
+
   if (!node) return null;
 
   const renderCoreContent = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-consciousness font-light text-consciousness-primary mb-2">
+        <h1 className="text-2xl md:text-3xl font-consciousness font-light text-consciousness-primary mb-2">
           {node.data.core}
         </h1>
-        <div className="text-cosmic font-neural text-lg mb-1">
-          {node.data.brand}
-        </div>
-        <p className="text-consciousness-secondary text-lg font-consciousness">
+        <p className="text-consciousness-secondary text-base md:text-lg font-consciousness">
           {node.data.essence}
         </p>
       </div>
       
       <div className="border-t border-surface-border pt-6">
         <h3 className="text-cosmic font-neural mb-3">Philosophy</h3>
-        <p className="text-consciousness-secondary leading-relaxed font-consciousness">
+        <p className="text-consciousness-secondary leading-relaxed font-consciousness text-sm md:text-base">
           {node.data.philosophy}
         </p>
       </div>
@@ -363,30 +394,42 @@ const ConsciousnessPanel: React.FC<ConsciousnessPanelProps> = ({ node, onClose }
   };
 
   return (
-    <div 
-      className={`fixed inset-y-0 right-0 w-1/3 min-w-[400px] max-w-[600px] thought-bubble p-6 transform transition-transform duration-silk z-50 overflow-y-auto ${
-        isVisible ? 'translate-x-0' : 'translate-x-full'
-      }`}
-    >
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-3 h-3 bg-cosmic rounded-full animate-consciousness-pulse" />
-          <span className="text-consciousness-whisper font-neural text-sm">
-            Consciousness Stream Active
-          </span>
-        </div>
-        <button
-          onClick={onClose}
-          className="text-consciousness-whisper hover:text-cosmic transition-colors font-neural text-xl"
-        >
-          ×
-        </button>
-      </div>
+    <>
+      {/* Mobile overlay backdrop */}
+      {isMobile && isVisible && (
+        <div className="fixed inset-0 bg-void/80 backdrop-blur-sm z-40" />
+      )}
       
-      <div className="animate-thought-materialize">
-        {renderContent()}
+      <div 
+        ref={panelRef}
+        className={`fixed ${
+          isMobile 
+            ? 'inset-x-4 top-16 bottom-16 max-h-[calc(100vh-8rem)]' 
+            : 'inset-y-0 right-0 w-1/3 min-w-[400px] max-w-[600px]'
+        } thought-bubble p-4 md:p-6 transform transition-transform duration-silk z-50 overflow-y-auto ${
+          isVisible ? 'translate-x-0 translate-y-0' : (isMobile ? 'translate-y-full' : 'translate-x-full')
+        }`}
+      >
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 md:w-3 md:h-3 bg-cosmic rounded-full animate-consciousness-pulse" />
+            <span className="text-consciousness-whisper font-neural text-xs md:text-sm">
+              Consciousness Stream Active
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-consciousness-whisper hover:text-cosmic transition-colors font-neural text-lg md:text-xl p-1"
+          >
+            ×
+          </button>
+        </div>
+        
+        <div className="animate-thought-materialize">
+          {renderContent()}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

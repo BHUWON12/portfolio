@@ -11,12 +11,30 @@ interface Position {
   y: number;
 }
 
+interface ViewTransform {
+  x: number;
+  y: number;
+  scale: number;
+}
+
 const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNode }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [viewTransform, setViewTransform] = useState({ x: 0, y: 0, scale: 1 });
+  const [viewTransform, setViewTransform] = useState<ViewTransform>({ x: 0, y: 0, scale: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Convert node position to screen coordinates
   const getScreenPosition = useCallback((nodePos: Position) => {
@@ -37,6 +55,15 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
     }
   }, [viewTransform]);
 
+  // Handle touch interactions for mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.target === e.currentTarget && e.touches.length === 1) {
+      setIsDragging(true);
+      const touch = e.touches[0];
+      setDragStart({ x: touch.clientX - viewTransform.x, y: touch.clientY - viewTransform.y });
+    }
+  }, [viewTransform]);
+
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (isDragging) {
       setViewTransform(prev => ({
@@ -47,7 +74,23 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
     }
   }, [isDragging, dragStart]);
 
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (isDragging && e.touches.length === 1) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      setViewTransform(prev => ({
+        ...prev,
+        x: touch.clientX - dragStart.x,
+        y: touch.clientY - dragStart.y,
+      }));
+    }
+  }, [isDragging, dragStart]);
+
   const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
   }, []);
 
@@ -57,19 +100,20 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
     setViewTransform(prev => ({
       ...prev,
-      scale: Math.max(0.3, Math.min(2, prev.scale * zoomFactor)),
+      scale: Math.max(0.2, Math.min(3, prev.scale * zoomFactor)),
     }));
   }, []);
 
-  // Auto-center on mount
+  // Auto-center and responsive scaling
   useEffect(() => {
     const centerView = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
+        const baseScale = isMobile ? 0.4 : 0.8;
         setViewTransform({
           x: 0,
           y: 0,
-          scale: Math.min(1, rect.width / 1200, rect.height / 800),
+          scale: Math.min(baseScale, rect.width / 1200, rect.height / 800),
         });
       }
     };
@@ -77,20 +121,21 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
     centerView();
     window.addEventListener('resize', centerView);
     return () => window.removeEventListener('resize', centerView);
-  }, []);
+  }, [isMobile]);
 
   // Node click handler
   const handleNodeClick = useCallback((node: ConsciousnessNode) => {
     onNodeSelect(selectedNode?.id === node.id ? null : node);
   }, [onNodeSelect, selectedNode]);
 
-  // Get node size based on type
+  // Get node size based on type and screen size
   const getNodeSize = (type: string) => {
+    const baseSize = isMobile ? 0.7 : 1;
     switch (type) {
-      case 'core': return 120;
-      case 'primary': return 80;
-      case 'secondary': return 60;
-      default: return 60;
+      case 'core': return Math.round(120 * baseSize);
+      case 'primary': return Math.round(90 * baseSize);
+      case 'secondary': return Math.round(70 * baseSize);
+      default: return Math.round(70 * baseSize);
     }
   };
 
@@ -117,13 +162,22 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
   return (
     <div 
       ref={containerRef}
-      className="relative w-full h-full overflow-hidden cursor-grab select-none"
+      className="relative w-full h-full overflow-hidden cursor-grab select-none touch-pan-x touch-pan-y"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       onWheel={handleWheel}
       style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
     >
+      {/* Flowing Data Streams Background */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="data-stream" />
+        <div className="data-stream" style={{ animationDelay: '1s', transform: 'rotate(45deg)' }} />
+        <div className="data-stream" style={{ animationDelay: '2s', transform: 'rotate(-45deg)' }} />
+      </div>
       {/* Neural Pathways */}
       <svg 
         className="absolute inset-0 w-full h-full pointer-events-none"
@@ -230,24 +284,24 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
                 <div className="absolute inset-0 rounded-full border-2 border-cosmic animate-cosmic-glow" />
               )}
               
-              {/* Node content */}
-              <div className="relative z-10 text-center p-2">
-                <div className={`font-consciousness font-medium ${
+              {/* Node content with better text handling */}
+              <div className="relative z-10 text-center p-2 w-full h-full flex items-center justify-center">
+                <div className={`font-consciousness font-medium leading-tight ${
                   node.type === 'core' 
-                    ? 'text-base text-consciousness-primary' 
+                    ? `${isMobile ? 'text-sm' : 'text-base'} text-consciousness-primary` 
                     : node.type === 'primary'
-                    ? 'text-sm text-consciousness-secondary'
-                    : 'text-xs text-consciousness-whisper'
+                    ? `${isMobile ? 'text-xs' : 'text-sm'} text-consciousness-secondary`
+                    : `text-xs text-consciousness-whisper`
                 }`}>
                   {node.type === 'core' ? (
-                    <>
-                      <div className="text-lg font-semibold">Bhuwan</div>
-                      <div className="text-sm opacity-80">Singh</div>
-                    </>
+                    <div className="space-y-1">
+                      <div className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold`}>Bhuwan</div>
+                      <div className={`${isMobile ? 'text-xs' : 'text-sm'} opacity-80`}>Singh</div>
+                    </div>
                   ) : (
-                    <div className="leading-tight">
+                    <div className="leading-tight space-y-0.5">
                       {node.title.split(' ').map((word, i) => (
-                        <div key={i}>{word}</div>
+                        <div key={i} className="block">{word}</div>
                       ))}
                     </div>
                   )}
@@ -256,7 +310,7 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
               
               {/* Active node energy field */}
               {isActive && (
-                <div className="absolute inset-0 rounded-full border border-cosmic-glow animate-synaptic-fire" />
+                <div className="absolute inset-0 rounded-full border border-cosmic-glow animate-neural-pulse" />
               )}
             </div>
             
@@ -273,10 +327,10 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
       })}
 
       {/* Navigation hint */}
-      <div className="absolute bottom-4 left-4 text-consciousness-whisper text-sm font-neural">
+      <div className="absolute bottom-4 left-4 text-consciousness-whisper text-xs md:text-sm font-neural">
         <div className="flex flex-col gap-1">
-          <div>Mouse: Navigate • Wheel: Zoom</div>
-          <div>Click: Explore Consciousness</div>
+          <div>{isMobile ? 'Touch: Navigate' : 'Mouse: Navigate • Wheel: Zoom'}</div>
+          <div>Tap: Explore Node</div>
         </div>
       </div>
 

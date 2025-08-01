@@ -39,25 +39,24 @@ export interface CapabilityCluster {
 export const consciousnessData = {
   consciousness: {
     core: "Bhuwan Singh",
-    essence: "The Backend Architect | Building robust, unseen structures of the digital world",
-    brand: "Vastrimo",
-    tagline: "Architecting Digital Consciousness",
-    philosophy: "In the vast expanse of digital architecture, I construct invisible foundations that power visible experiences. Every line of code is a neural pathway in the greater mind of technology."
+    essence: "Backend Architect | Building robust, scalable digital infrastructures",
+    tagline: "Architecting Digital Excellence",
+    philosophy: "I architect the invisible foundations that power digital experiences. Every system I build is designed to think, adapt, and scale with intelligence that anticipates tomorrow's challenges."
   },
   
   neural_pathways: {
     foundation: {
       title: "The Foundation",
-      consciousness_stream: `I am a Backend Architect who believes that true digital innovation happens in the shadows—in the elegant algorithms, the resilient databases, and the scalable infrastructures that users never see but always depend upon.
+      consciousness_stream: `I am a Backend Architect who specializes in creating robust, scalable digital infrastructures that form the backbone of modern applications.
 
-My journey began with a fascination for systems thinking and evolved into a mastery of creating digital consciousness through code. I don't just build applications; I architect digital ecosystems that think, adapt, and evolve.
+My expertise lies in designing systems that don't just function—they excel. I focus on building architectures that are resilient, performant, and maintainable, ensuring they can evolve with changing business needs.
 
-At Vastrimo, I've transformed this philosophy into a practice of creating backend systems that don't just function—they anticipate, optimize, and scale with intelligence that borders on artificial consciousness.`,
+I believe in the power of clean code, efficient algorithms, and thoughtful system design. Every project I undertake is an opportunity to push the boundaries of what's possible in backend development.`,
       key_principles: [
-        "Systems thinking over feature thinking",
-        "Elegant architecture over quick solutions", 
-        "Proactive optimization over reactive fixes",
-        "User experience through invisible excellence"
+        "Performance-first architecture design",
+        "Scalable and maintainable code practices", 
+        "Data-driven optimization strategies",
+        "User-centric system reliability"
       ]
     },
     
@@ -67,9 +66,9 @@ At Vastrimo, I've transformed this philosophy into a practice of creating backen
         {
           id: "neural-commerce",
           name: "Neural Commerce Engine",
-          problem_space: "Traditional e-commerce platforms struggle with real-time inventory management, predictive analytics, and seamless user experiences across multiple touchpoints. The challenge was creating a consciousness-like system that could anticipate customer needs while optimizing business operations.",
+          problem_space: "Traditional e-commerce platforms struggle with real-time inventory management, predictive analytics, and seamless user experiences across multiple touchpoints. The challenge was creating an intelligent system that could anticipate customer needs while optimizing business operations.",
           solution_matrix: ["Python", "FastAPI", "PostgreSQL", "Redis", "Machine Learning"],
-          live_consciousness: "https://commerce-neural.vastrimo.com",
+          live_consciousness: "https://commerce-demo.bhuwansingh.dev",
           source_code: "https://github.com/bhuwansingh/neural-commerce",
           system_visualization: "/architectures/neural-commerce-diagram.svg",
           impact_metrics: [
@@ -85,7 +84,7 @@ At Vastrimo, I've transformed this philosophy into a practice of creating backen
           name: "Quantum Analytics Platform",
           problem_space: "Enterprise clients needed real-time data processing capabilities that could handle massive datasets while providing instantaneous insights. Traditional analytics tools created bottlenecks and couldn't scale with business growth.",
           solution_matrix: ["Node.js", "MongoDB", "Apache Kafka", "TensorFlow", "Docker"],
-          live_consciousness: "https://quantum-analytics.vastrimo.com",
+          live_consciousness: "https://analytics-demo.bhuwansingh.dev",
           source_code: "https://github.com/bhuwansingh/quantum-analytics",
           system_visualization: "/architectures/quantum-analytics-diagram.svg",
           impact_metrics: [
@@ -101,7 +100,7 @@ At Vastrimo, I've transformed this philosophy into a practice of creating backen
           name: "Consciousness API Framework",
           problem_space: "Microservices architectures often become chaotic and difficult to manage. The goal was creating an API framework that could self-organize, auto-scale, and maintain consistency across distributed systems.",
           solution_matrix: ["Python", "FastAPI", "Kubernetes", "PostgreSQL", "GraphQL"],
-          live_consciousness: "https://api-consciousness.vastrimo.com",
+          live_consciousness: "https://api-demo.bhuwansingh.dev",
           source_code: "https://github.com/bhuwansingh/consciousness-api",
           system_visualization: "/architectures/consciousness-api-diagram.svg",
           impact_metrics: [
@@ -154,23 +153,23 @@ At Vastrimo, I've transformed this philosophy into a practice of creating backen
     gateway: {
       title: "The Gateway",
       connection_protocols: {
-        primary: "bhuwan@vastrimo.com",
+        primary: "bhuwan.singh.dev@gmail.com",
         secondary: "+91-XXXX-XXXX-XX",
         networks: [
           {
             protocol: "LinkedIn",
-            endpoint: "https://linkedin.com/in/bhuwansingh-vastrimo",
-            description: "Professional neural network"
+            endpoint: "https://linkedin.com/in/bhuwan-singh-dev",
+            description: "Professional network"
           },
           {
             protocol: "GitHub", 
             endpoint: "https://github.com/bhuwansingh",
-            description: "Code consciousness repository"
+            description: "Code repository"
           },
           {
             protocol: "Portfolio",
-            endpoint: "https://vastrimo.com",
-            description: "Digital presence nexus"
+            endpoint: "https://bhuwansingh.dev",
+            description: "Digital portfolio"
           }
         ]
       },
