@@ -195,52 +195,109 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
           
           return (
             <g key={pathway.id}>
-              {/* Pathway glow effect */}
-              {isActive && (
-                <line
-                  x1={fromPos.x}
-                  y1={fromPos.y}
-                  x2={toPos.x}
-                  y2={toPos.y}
-                  stroke="hsl(var(--cosmic))"
-                  strokeWidth={6}
-                  opacity={0.3}
-                  filter="blur(2px)"
-                />
-              )}
-              
-              {/* Main pathway */}
-              <line
-                x1={fromPos.x}
-                y1={fromPos.y}
-                x2={toPos.x}
-                y2={toPos.y}
-                stroke={isActive ? "hsl(var(--cosmic))" : "hsl(var(--neural))"}
-                strokeWidth={isActive ? 3 : 1}
-                opacity={isActive ? 1 : 0.4}
-                strokeDasharray={pathway.animated ? "8 4" : "none"}
-                className={pathway.animated ? "animate-neural-flow" : ""}
-                style={{
-                  strokeDashoffset: pathway.animated ? '0' : undefined,
-                  transition: 'all 0.3s ease',
-                }}
-              />
+              {/* Calculate smooth curve control points */}
+              {(() => {
+                const dx = toPos.x - fromPos.x;
+                const dy = toPos.y - fromPos.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const curvature = Math.min(distance * 0.3, 150);
+                
+                const midX = (fromPos.x + toPos.x) / 2;
+                const midY = (fromPos.y + toPos.y) / 2;
+                
+                // Create perpendicular offset for curve
+                const offsetX = -dy / distance * curvature;
+                const offsetY = dx / distance * curvature;
+                
+                const cp1x = fromPos.x + offsetX * 0.3;
+                const cp1y = fromPos.y + offsetY * 0.3;
+                const cp2x = toPos.x + offsetX * 0.3;
+                const cp2y = toPos.y + offsetY * 0.3;
+                
+                const pathData = `M ${fromPos.x} ${fromPos.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${toPos.x} ${toPos.y}`;
+                
+                return (
+                  <>
+                    {/* Pathway glow effect */}
+                    {isActive && (
+                      <path
+                        d={pathData}
+                        stroke="hsl(var(--cosmic))"
+                        strokeWidth={8}
+                        opacity={0.2}
+                        fill="none"
+                        filter="blur(3px)"
+                        strokeLinecap="round"
+                      />
+                    )}
+                    
+                    {/* Main pathway */}
+                    <path
+                      d={pathData}
+                      stroke={isActive ? "hsl(var(--cosmic))" : "hsl(var(--neural))"}
+                      strokeWidth={isActive ? 3 : 1.5}
+                      opacity={isActive ? 1 : 0.4}
+                      fill="none"
+                      strokeDasharray={pathway.animated ? "12 6" : "none"}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={pathway.animated ? "animate-neural-flow" : ""}
+                      style={{
+                        strokeDashoffset: pathway.animated ? '0' : undefined,
+                        transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                        filter: isActive ? 'drop-shadow(0 0 4px hsl(var(--cosmic) / 0.3))' : 'none',
+                      }}
+                    />
+                  </>
+                );
+              })()}
               
               {/* Data flow particles for active pathways */}
-              {isActive && pathway.animated && (
-                <circle
-                  r="3"
-                  fill="hsl(var(--cosmic))"
-                  opacity={0.8}
-                  className="animate-consciousness-pulse"
-                >
-                  <animateMotion
-                    dur="2s"
-                    repeatCount="indefinite"
-                    path={`M ${fromPos.x} ${fromPos.y} L ${toPos.x} ${toPos.y}`}
-                  />
-                </circle>
-              )}
+              {isActive && pathway.animated && (() => {
+                const dx = toPos.x - fromPos.x;
+                const dy = toPos.y - fromPos.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const curvature = Math.min(distance * 0.3, 150);
+                
+                const offsetX = -dy / distance * curvature;
+                const offsetY = dx / distance * curvature;
+                
+                const cp1x = fromPos.x + offsetX * 0.3;
+                const cp1y = fromPos.y + offsetY * 0.3;
+                const cp2x = toPos.x + offsetX * 0.3;
+                const cp2y = toPos.y + offsetY * 0.3;
+                
+                const particlePath = `M ${fromPos.x} ${fromPos.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${toPos.x} ${toPos.y}`;
+                
+                return (
+                  <>
+                    <circle
+                      r="3"
+                      fill="hsl(var(--cosmic))"
+                      opacity={0.9}
+                      className="animate-consciousness-pulse"
+                    >
+                      <animateMotion
+                        dur="3s"
+                        repeatCount="indefinite"
+                        path={particlePath}
+                      />
+                    </circle>
+                    <circle
+                      r="2"
+                      fill="hsl(var(--cosmic-glow))"
+                      opacity={0.6}
+                    >
+                      <animateMotion
+                        dur="2.5s"
+                        repeatCount="indefinite"
+                        path={particlePath}
+                        begin="0.5s"
+                      />
+                    </circle>
+                  </>
+                );
+              })()}
             </g>
           );
         })}

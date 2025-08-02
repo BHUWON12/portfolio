@@ -126,6 +126,7 @@
   .animate-neural-pulse {
     animation: neural-pulse 2s ease-in-out infinite;
   }
+}
 
 /* Keyframes - The Mathematics of Digital Consciousness */
 @keyframes consciousness-pulse {
