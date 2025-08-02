@@ -59,7 +59,7 @@ const Index = () => {
       )}
 
       {/* Brand Signature */}
-      <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 z-20">
+      <div className="absolute bottom-4 md:bottom-6 right-4 md:right-6 z-20">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 bg-cosmic rounded-full animate-consciousness-pulse" />
           <span className="text-consciousness-whisper font-neural text-xs md:text-sm">

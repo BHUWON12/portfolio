@@ -19,6 +19,7 @@ interface ViewTransform {
 
 const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNode }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const [viewTransform, setViewTransform] = useState<ViewTransform>({ x: 0, y: 0, scale: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
@@ -36,16 +37,68 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Convert node position to screen coordinates
+  // Convert node position to screen coordinates with proper scaling
   const getScreenPosition = useCallback((nodePos: Position) => {
-    const centerX = (containerRef.current?.clientWidth || 0) / 2;
-    const centerY = (containerRef.current?.clientHeight || 0) / 2;
+    if (!containerRef.current) return { x: 0, y: 0 };
+    
+    const centerX = containerRef.current.clientWidth / 2;
+    const centerY = containerRef.current.clientHeight / 2;
     
     return {
-      x: centerX + (nodePos.x * viewTransform.scale) + viewTransform.x,
-      y: centerY + (nodePos.y * viewTransform.scale) + viewTransform.y,
+      x: centerX + (nodePos.x + viewTransform.x) * viewTransform.scale,
+      y: centerY + (nodePos.y + viewTransform.y) * viewTransform.scale,
     };
   }, [viewTransform]);
+
+  // Get node radius for proper line connection points
+  const getNodeRadius = useCallback((type: string) => {
+    const baseSize = isMobile ? 0.7 : 1;
+    switch (type) {
+      case 'core': return (120 * baseSize) / 2;
+      case 'primary': return (90 * baseSize) / 2;
+      case 'secondary': return (70 * baseSize) / 2;
+      default: return (70 * baseSize) / 2;
+    }
+  }, [isMobile]);
+
+  // Calculate connection points on node edges
+  const getConnectionPoint = useCallback((fromPos: Position, toPos: Position, nodeRadius: number) => {
+    const dx = toPos.x - fromPos.x;
+    const dy = toPos.y - fromPos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance === 0) return fromPos;
+    
+    const unitX = dx / distance;
+    const unitY = dy / distance;
+    
+    return {
+      x: fromPos.x + unitX * nodeRadius * viewTransform.scale,
+      y: fromPos.y + unitY * nodeRadius * viewTransform.scale,
+    };
+  }, [viewTransform.scale]);
+
+  // Create smooth bezier curve
+  const createSmoothPath = useCallback((start: Position, end: Position) => {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Dynamic control point calculation for smoother curves
+    const curvature = Math.min(distance * 0.4, 200 * viewTransform.scale);
+    
+    // Create perpendicular offset for natural curve
+    const perpX = -dy / distance;
+    const perpY = dx / distance;
+    
+    // Control points for smooth bezier curve
+    const cp1x = start.x + dx * 0.3 + perpX * curvature * 0.3;
+    const cp1y = start.y + dy * 0.3 + perpY * curvature * 0.3;
+    const cp2x = end.x - dx * 0.3 + perpX * curvature * 0.3;
+    const cp2y = end.y - dy * 0.3 + perpY * curvature * 0.3;
+    
+    return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+  }, [viewTransform.scale]);
 
   // Handle mouse interactions
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -178,11 +231,25 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
         <div className="data-stream" style={{ animationDelay: '1s', transform: 'rotate(45deg)' }} />
         <div className="data-stream" style={{ animationDelay: '2s', transform: 'rotate(-45deg)' }} />
       </div>
+
       {/* Neural Pathways */}
       <svg 
+        ref={svgRef}
         className="absolute inset-0 w-full h-full pointer-events-none"
         style={{ zIndex: 1 }}
+        viewBox={`0 0 ${containerRef.current?.clientWidth || 800} ${containerRef.current?.clientHeight || 600}`}
+        preserveAspectRatio="xMidYMid meet"
       >
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge> 
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+
         {neuralPathways.map((pathway) => {
           const fromNode = neuralNodes.find(n => n.id === pathway.from);
           const toNode = neuralNodes.find(n => n.id === pathway.to);
@@ -191,84 +258,52 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
           
           const fromPos = getScreenPosition(fromNode.position);
           const toPos = getScreenPosition(toNode.position);
+          
+          // Calculate connection points on node edges
+          const fromRadius = getNodeRadius(fromNode.type);
+          const toRadius = getNodeRadius(toNode.type);
+          
+          const fromConnection = getConnectionPoint(fromPos, toPos, fromRadius);
+          const toConnection = getConnectionPoint(toPos, fromPos, toRadius);
+          
+          const pathData = createSmoothPath(fromConnection, toConnection);
           const isActive = isPathwayActive(pathway);
           
           return (
             <g key={pathway.id}>
-              {/* Calculate smooth curve control points */}
-              {(() => {
-                const dx = toPos.x - fromPos.x;
-                const dy = toPos.y - fromPos.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                const curvature = Math.min(distance * 0.3, 150);
-                
-                const midX = (fromPos.x + toPos.x) / 2;
-                const midY = (fromPos.y + toPos.y) / 2;
-                
-                // Create perpendicular offset for curve
-                const offsetX = -dy / distance * curvature;
-                const offsetY = dx / distance * curvature;
-                
-                const cp1x = fromPos.x + offsetX * 0.3;
-                const cp1y = fromPos.y + offsetY * 0.3;
-                const cp2x = toPos.x + offsetX * 0.3;
-                const cp2y = toPos.y + offsetY * 0.3;
-                
-                const pathData = `M ${fromPos.x} ${fromPos.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${toPos.x} ${toPos.y}`;
-                
-                return (
-                  <>
-                    {/* Pathway glow effect */}
-                    {isActive && (
-                      <path
-                        d={pathData}
-                        stroke="hsl(var(--cosmic))"
-                        strokeWidth={8}
-                        opacity={0.2}
-                        fill="none"
-                        filter="blur(3px)"
-                        strokeLinecap="round"
-                      />
-                    )}
-                    
-                    {/* Main pathway */}
-                    <path
-                      d={pathData}
-                      stroke={isActive ? "hsl(var(--cosmic))" : "hsl(var(--neural))"}
-                      strokeWidth={isActive ? 3 : 1.5}
-                      opacity={isActive ? 1 : 0.4}
-                      fill="none"
-                      strokeDasharray={pathway.animated ? "12 6" : "none"}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={pathway.animated ? "animate-neural-flow" : ""}
-                      style={{
-                        strokeDashoffset: pathway.animated ? '0' : undefined,
-                        transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                        filter: isActive ? 'drop-shadow(0 0 4px hsl(var(--cosmic) / 0.3))' : 'none',
-                      }}
-                    />
-                  </>
-                );
-              })()}
+              {/* Pathway glow effect */}
+              {isActive && (
+                <path
+                  d={pathData}
+                  stroke="hsl(var(--cosmic))"
+                  strokeWidth={6}
+                  opacity={0.3}
+                  fill="none"
+                  filter="url(#glow)"
+                  strokeLinecap="round"
+                />
+              )}
+              
+              {/* Main pathway */}
+              <path
+                d={pathData}
+                stroke={isActive ? "hsl(var(--cosmic))" : "hsl(var(--neural))"}
+                strokeWidth={isActive ? 3 : 1.5}
+                opacity={isActive ? 1 : 0.4}
+                fill="none"
+                strokeDasharray={pathway.animated ? "12 6" : "none"}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={pathway.animated ? "animate-neural-flow" : ""}
+                style={{
+                  strokeDashoffset: pathway.animated ? '0' : undefined,
+                  transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                  filter: isActive ? 'drop-shadow(0 0 4px hsl(var(--cosmic) / 0.3))' : 'none',
+                }}
+              />
               
               {/* Data flow particles for active pathways */}
               {isActive && pathway.animated && (() => {
-                const dx = toPos.x - fromPos.x;
-                const dy = toPos.y - fromPos.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                const curvature = Math.min(distance * 0.3, 150);
-                
-                const offsetX = -dy / distance * curvature;
-                const offsetY = dx / distance * curvature;
-                
-                const cp1x = fromPos.x + offsetX * 0.3;
-                const cp1y = fromPos.y + offsetY * 0.3;
-                const cp2x = toPos.x + offsetX * 0.3;
-                const cp2y = toPos.y + offsetY * 0.3;
-                
-                const particlePath = `M ${fromPos.x} ${fromPos.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${toPos.x} ${toPos.y}`;
-                
                 return (
                   <>
                     <circle
@@ -280,7 +315,7 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
                       <animateMotion
                         dur="3s"
                         repeatCount="indefinite"
-                        path={particlePath}
+                        path={pathData}
                       />
                     </circle>
                     <circle
@@ -291,7 +326,7 @@ const NeuralNetwork: React.FC<NeuralNetworkProps> = ({ onNodeSelect, selectedNod
                       <animateMotion
                         dur="2.5s"
                         repeatCount="indefinite"
-                        path={particlePath}
+                        path={pathData}
                         begin="0.5s"
                       />
                     </circle>
