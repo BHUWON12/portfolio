@@ -83,7 +83,7 @@ Simultaneously, I am diving deep into Machine Learning to integrate predictive a
           name: "activevacancy - Job Portal",
           problem_space: "Job seekers need a streamlined application process without mandatory registration, while employers require a powerful admin panel to manage applications efficiently. The platform needed to be fast, SEO-optimized, and monetizable.",
           solution_matrix: ["React", "TypeScript", "Tailwind CSS", "React Router DOM", "React Hook Form", "Vite"],
-          live_consciousness: "https://active-vacancy-frontend.vercel.app/",
+          live_consciousness: "https://activevacancy.vercel.app/",
           source_code: "",
           system_visualization: "",
           impact_metrics: [
