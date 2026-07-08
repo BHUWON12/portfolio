@@ -60,15 +60,15 @@ const CONTENT: Topic[] = [
     rows: [
       {
         k: "who",
-        v: "Bhuwan Singh — an AI engineer from India who builds systems that are not just fast and scalable, but intelligent.",
+        v: "Bhuwan Singh — an AI engineer from India who turns machine learning and LLMs into reliable, production-ready software.",
       },
       {
         k: "what I do",
-        v: "I build GenAI microservices — chatbots, review sentiment analysis, summarization, and agentic systems — on high-performance FastAPI backends.",
+        v: "I design and build AI systems end to end — LLM-powered applications, agentic workflows, ML models, and the high-performance FastAPI backends that serve them.",
       },
       {
         k: "right now",
-        v: "AI Engineer working on GenAI and agentic AI, shipping production microservices end to end.",
+        v: "Junior AI Engineer at Hala Tech, building GenAI microservices — chatbots, review sentiment analysis, summarization, and agentic systems.",
         n: "since October 2025",
       },
       {
@@ -121,13 +121,12 @@ const CONTENT: Topic[] = [
     rows: [
       {
         k: "Oct 2025 — now",
-        v: "Junior AI Engineer · GenAI & Agentic AI",
+        v: "Hala Tech · Junior AI Engineer",
         n: "chatbot, review sentiment, summarization & agentic microservices",
       },
       {
-        k: "before that",
+        k: "Feb — Apr 2025",
         v: "Edunet Foundation · AI/ML Intern",
-        n: "2-month internship",
       },
       {
         k: "alongside",
@@ -196,7 +195,7 @@ const CONTENT: Topic[] = [
       { k: "based in", v: "Remote / India · IST" },
       {
         k: "open to",
-        v: "FastAPI backend · ML engineer · AI-powered application roles",
+        v: "AI engineer · GenAI & agentic systems · ML engineering roles",
       },
     ],
   },
