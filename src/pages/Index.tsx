@@ -16,21 +16,21 @@ const FAINT = "#D8DADE";
 const ACCENT = "#2E4FE0";
 
 const MONO = "'IBM Plex Mono', ui-monospace, Menlo, monospace";
-const SERIF = "'Instrument Serif', Georgia, serif";
+const DISPLAY = "'Space Grotesk', 'Inter', -apple-system, sans-serif";
 const SANS = "'Inter', -apple-system, 'Segoe UI', sans-serif";
 
 const PROFILE = {
   first: "Bhuwan",
   last: "Singh",
-  role: "AI-Powered Backend Engineer",
-  focus: "FastAPI · Machine Learning · Real-time Systems",
-  email: "bhandaribh12@gmail.com",
-  github: "github.com/BHUWON12",
+  role: "AI Engineer",
+  focus: "GenAI · Agentic AI · FastAPI",
+  email: "bhuwan.unzip@gmail.com",
+  github: "github.com/sudobhuwan",
   linkedin: "linkedin.com/in/bhuwansingh02",
 };
 
 const INTRO =
-  "I build intelligent backends with FastAPI and machine learning — and this page answers the same way.";
+  "I build GenAI systems — chatbots, agents, and intelligent backends — and this page answers the same way.";
 
 interface RowLink {
   t: string;
@@ -60,15 +60,16 @@ const CONTENT: Topic[] = [
     rows: [
       {
         k: "who",
-        v: "Bhuwan Singh — a backend engineer from India who builds systems that are not just fast and scalable, but intelligent.",
+        v: "Bhuwan Singh — an AI engineer from India who builds systems that are not just fast and scalable, but intelligent.",
       },
       {
         k: "what I do",
-        v: "I design high-performance APIs with FastAPI and integrate machine learning directly into them — bridging raw data and intelligent action.",
+        v: "I build GenAI microservices — chatbots, review sentiment analysis, summarization, and agentic systems — on high-performance FastAPI backends.",
       },
       {
         k: "right now",
-        v: "Building AI-powered products end to end: real-time chat, ML-driven diagnosis tools, and prediction systems.",
+        v: "AI Engineer working on GenAI and agentic AI, shipping production microservices end to end.",
+        n: "since October 2025",
       },
       {
         k: "what drives me",
@@ -114,10 +115,35 @@ const CONTENT: Topic[] = [
     ],
   },
   {
+    key: "experience",
+    label: "experience",
+    question: "Where have you worked?",
+    rows: [
+      {
+        k: "Oct 2025 — now",
+        v: "Junior AI Engineer · GenAI & Agentic AI",
+        n: "chatbot, review sentiment, summarization & agentic microservices",
+      },
+      {
+        k: "before that",
+        v: "Edunet Foundation · AI/ML Intern",
+        n: "2-month internship",
+      },
+      {
+        k: "alongside",
+        v: "Independent projects — five live AI and web products, built and shipped end to end.",
+      },
+    ],
+  },
+  {
     key: "skills",
     label: "skills",
     question: "What are you good at?",
     rows: [
+      {
+        k: "GenAI & Agents",
+        v: "chatbot systems · summarization · review sentiment analysis · agentic workflows · RAG",
+      },
       {
         k: "Backend",
         v: "Python · FastAPI · WebSockets · REST APIs · SQLAlchemy · Asyncio",
@@ -167,7 +193,7 @@ const CONTENT: Topic[] = [
       { k: "email", v: PROFILE.email, href: `mailto:${PROFILE.email}` },
       { k: "github", v: PROFILE.github, href: `https://${PROFILE.github}` },
       { k: "linkedin", v: PROFILE.linkedin, href: `https://${PROFILE.linkedin}` },
-      { k: "based in", v: "Remote / India · UTC+5:30" },
+      { k: "based in", v: "Remote / India · IST" },
       {
         k: "open to",
         v: "FastAPI backend · ML engineer · AI-powered application roles",
@@ -321,7 +347,6 @@ export default function Index() {
       style={{ minHeight: "100vh", background: BG, color: INK, fontFamily: SANS }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap');
         ::selection { background: rgba(46,79,224,0.12); }
         @keyframes blink { 0%,55% {opacity:1} 56%,100% {opacity:0} }
         @keyframes rise { from {opacity:0; transform:translateY(6px)} to {opacity:1; transform:none} }
@@ -344,11 +369,11 @@ export default function Index() {
         <header className="rise">
           <h1
             style={{
-              fontFamily: SERIF,
-              fontWeight: 400,
-              fontSize: "clamp(3.4rem, 9vw, 6.6rem)",
-              lineHeight: 0.98,
-              letterSpacing: "-0.015em",
+              fontFamily: DISPLAY,
+              fontWeight: 600,
+              fontSize: "clamp(2.6rem, 7vw, 5rem)",
+              lineHeight: 1.05,
+              letterSpacing: "-0.03em",
               margin: 0,
             }}
           >
