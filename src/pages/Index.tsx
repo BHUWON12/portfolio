@@ -30,7 +30,7 @@ const PROFILE = {
 };
 
 const INTRO =
-  "I build GenAI systems — chatbots, agents, and intelligent backends — and this page answers the same way.";
+  "I build AI that reads, reasons, and replies — and this page works the same way. Go ahead, interrogate it.";
 
 interface RowLink {
   t: string;
@@ -60,20 +60,20 @@ const CONTENT: Topic[] = [
     rows: [
       {
         k: "who",
-        v: "Bhuwan Singh — an AI engineer from India who turns machine learning and LLMs into reliable, production-ready software.",
+        v: "Bhuwan Singh — an AI engineer from India who teaches machines to read, reason, and reply. Politely.",
       },
       {
         k: "what I do",
-        v: "I design and build AI systems end to end — LLM-powered applications, agentic workflows, ML models, and the high-performance FastAPI backends that serve them.",
+        v: "I build AI systems end to end — LLM applications, agentic workflows, ML models, and the FastAPI backends that keep them fast and honest.",
       },
       {
         k: "right now",
-        v: "Junior AI Engineer at Hala Tech, building GenAI microservices — chatbots, review sentiment analysis, summarization, and agentic systems.",
+        v: "Junior AI Engineer at Hala Tech, shipping GenAI microservices: chatbots that actually chat, summarizers that respect your time, sentiment engines that read the room, and agents that get things done.",
         n: "since October 2025",
       },
       {
         k: "what drives me",
-        v: "Creating software that is not only functional but insightful — capable of learning and adapting to drive real-world impact.",
+        v: "Making AI useful is easy. Making it reliable — that's the fun part.",
       },
     ],
   },
@@ -84,31 +84,31 @@ const CONTENT: Topic[] = [
     rows: [
       {
         k: "GuffGaaf",
-        v: "An anonymous real-time chat platform with WebSocket messaging and Redis-backed matchmaking.",
+        v: "Anonymous real-time chat where strangers meet over WebSockets and Redis plays matchmaker. Cupid, but containerized.",
         n: "FastAPI · WebSockets · Redis · React · Docker",
         links: [{ t: "live", u: "https://guff-gaaf.vercel.app/" }],
       },
       {
         k: "activevacancy",
-        v: "A job portal where seekers apply without registration and employers manage everything from a secure admin panel.",
+        v: "A job portal where applying takes seconds, not sign-up forms. Employers get a control room; job seekers get their evenings back.",
         n: "React · TypeScript · SEO optimized · Excel export",
         links: [{ t: "live", u: "https://activevacancy.vercel.app/" }],
       },
       {
         k: "Vastrimo",
-        v: "A premium e-commerce frontend with secure authentication, admin controls, and a fully responsive design.",
+        v: "A premium e-commerce frontend polished enough that closing the tab feels rude. Responsive down to the last pixel.",
         n: "React · TypeScript · Tailwind CSS",
         links: [{ t: "live", u: "https://www.vastrimo.com/" }],
       },
       {
         k: "AgriDoctor",
-        v: "An AI tool that diagnoses plant diseases from a photo and returns treatment and prevention advice.",
+        v: "Show it a photo of a sick plant, get a diagnosis and a treatment plan. A doctor that makes house calls to your garden.",
         n: "TensorFlow · Keras · OpenCV · FastAPI",
         links: [{ t: "live", u: "https://agridoctor.streamlit.app/" }],
       },
       {
         k: "Clear Air Vision",
-        v: "An air-quality prediction interface that turns complex AI model output into something anyone can act on.",
+        v: "An AI that predicts air quality and explains itself with charts — so you know when to breathe deep and when to blame traffic.",
         n: "Streamlit · FastAPI · Plotly · Pandas",
         links: [{ t: "live", u: "https://clearairvision.streamlit.app/" }],
       },
@@ -122,15 +122,16 @@ const CONTENT: Topic[] = [
       {
         k: "Oct 2025 — now",
         v: "Hala Tech · Junior AI Engineer",
-        n: "chatbot, review sentiment, summarization & agentic microservices",
+        n: "chatbots, review sentiment, summarization & agentic microservices — the full GenAI buffet",
       },
       {
         k: "Feb — Apr 2025",
         v: "Edunet Foundation · AI/ML Intern",
+        n: "where the obsession became official",
       },
       {
         k: "alongside",
-        v: "Independent projects — five live AI and web products, built and shipped end to end.",
+        v: "Five products built and shipped solo — from first commit to live URL, no adult supervision required.",
       },
     ],
   },
@@ -163,6 +164,10 @@ const CONTENT: Topic[] = [
         k: "Frontend",
         v: "React · TypeScript · Streamlit · HTML/CSS",
       },
+      {
+        k: "and honestly",
+        v: "Reading stack traces like bedtime stories.",
+      },
     ],
   },
   {
@@ -172,15 +177,42 @@ const CONTENT: Topic[] = [
     rows: [
       {
         k: "AI-first design",
-        v: "Intelligence is part of the architecture from day one, not bolted on later.",
+        v: "Intelligence is designed in from day one — not stapled on the week before launch.",
       },
       {
-        k: "Performance",
-        v: "FastAPI and async everywhere — speed and scalability are features, not afterthoughts.",
+        k: "Speed is a feature",
+        v: "Async everywhere. If a response takes a full second, that's 900 milliseconds of apology.",
       },
       {
         k: "Data-centric",
-        v: "Resilient architecture built around the data, so models can be deployed and improved safely.",
+        v: "The architecture is built around the data, so models can improve without the system flinching.",
+      },
+      {
+        k: "Think, then type",
+        v: "Every hard problem gets whiteboard time before it gets code. The keyboard is the last tool I reach for.",
+      },
+    ],
+  },
+  {
+    key: "offduty",
+    label: "off duty",
+    question: "What about outside work?",
+    rows: [
+      {
+        k: "photography",
+        v: "Chasing light with a camera. Turns out the best shots, like the best systems, are all about timing.",
+      },
+      {
+        k: "videography",
+        v: "Telling stories in frames per second. Editing taught me more about pacing than any codebase ever did.",
+      },
+      {
+        k: "fitness",
+        v: "The gym is my other deploy pipeline — progressive overload, daily commits, no rollbacks.",
+      },
+      {
+        k: "brainstorming",
+        v: "Chronic ideator. Hand me a hard problem and a whiteboard, and you'll get three solid solutions — plus a weird fourth one that just might work.",
       },
     ],
   },
@@ -189,13 +221,19 @@ const CONTENT: Topic[] = [
     label: "contact",
     question: "How do I reach you?",
     rows: [
-      { k: "email", v: PROFILE.email, href: `mailto:${PROFILE.email}` },
+      {
+        k: "email",
+        v: PROFILE.email,
+        href: `mailto:${PROFILE.email}`,
+        n: "replies faster than his chatbots",
+      },
       { k: "github", v: PROFILE.github, href: `https://${PROFILE.github}` },
       { k: "linkedin", v: PROFILE.linkedin, href: `https://${PROFILE.linkedin}` },
-      { k: "based in", v: "Remote / India · IST" },
+      { k: "based in", v: "India · IST · remote-friendly" },
       {
         k: "open to",
         v: "AI engineer · GenAI & agentic systems · ML engineering roles",
+        n: "and any conversation that starts with an interesting problem",
       },
     ],
   },
@@ -642,7 +680,7 @@ export default function Index() {
           }}
         >
           © {new Date().getFullYear()} {PROFILE.first} {PROFILE.last} — this page
-          writes its own answers.
+          writes its own answers. The human behind it approves every one.
         </footer>
       </div>
     </div>
