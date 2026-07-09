@@ -460,7 +460,7 @@ export default function Index() {
               </div>
             </div>
           </div>
-          <ParticleFace size={210} accent={ACCENT} />
+          <ParticleFace size={230} accent={ACCENT} />
         </header>
 
         <div style={{ height: 1, background: FAINT, marginTop: 30 }} />

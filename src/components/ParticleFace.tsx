@@ -5,17 +5,16 @@ import { useEffect, useRef, useState } from "react";
  * accent-colored dots (darker photo regions → larger dots), with mouse-tilt
  * parallax and a slow scanline shimmer. Canvas 2D only, no dependencies.
  *
- * Sampling constants below are tuned to public/portrait.jpg — a studio shot
- * with a neutral-gray background: skin is separated from the background by
- * chroma (gray bg has R≈G≈B), hair/beard by darkness, and an elliptical mask
- * drops the suit and collar.
+ * Sampling constants below are tuned to public/portrait.jpg — an outdoor
+ * shot with foliage/sky behind and a red shirt. The head is isolated by
+ * color: skin and hair are warm-to-neutral, while foliage reads green
+ * (G > R), sky reads bright-neutral/blue, and the shirt reads saturated
+ * pink-red — all three are rejected, plus an elliptical head mask.
  */
 
-const WORK = 300; // working resolution the image is sampled at
-const STEP = 3; // sample grid spacing (working px) → ~3-4k particles
-const CHROMA_T = 20 / 255; // above → skin, regardless of brightness
-const DARK_T = 0.15; // below → hair/beard/features
-const ELLIPSE = { cx: 0.5, cy: 0.46, rx: 0.42, ry: 0.48 }; // head mask, fractions of WORK
+const WORK = 360; // working resolution the image is sampled at
+const STEP = 2; // sample grid spacing (working px) → ~15-18k particles
+const ELLIPSE = { cx: 0.5, cy: 0.5, rx: 0.47, ry: 0.5 }; // head mask, fractions of WORK
 const TILT_X = 14; // parallax amplitude, working px
 const TILT_Y = 10;
 const DRIFT = 0.5; // idle vertical drift amplitude, working px
@@ -73,7 +72,18 @@ export default function ParticleFace({
       off.height = WORK;
       const octx = off.getContext("2d");
       if (!octx) return;
-      octx.drawImage(img, 0, 0, WORK, WORK);
+      const side = Math.min(img.naturalWidth, img.naturalHeight);
+      octx.drawImage(
+        img,
+        (img.naturalWidth - side) / 2,
+        (img.naturalHeight - side) / 2,
+        side,
+        side,
+        0,
+        0,
+        WORK,
+        WORK,
+      );
       const data = octx.getImageData(0, 0, WORK, WORK).data;
 
       for (let y = 0; y < WORK; y += STEP) {
@@ -83,23 +93,27 @@ export default function ParticleFace({
           const g = data[i + 1];
           const b = data[i + 2];
           const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-          const chroma =
-            (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+          const warm = r - g;
+          const gb = g - b;
 
           const nx = (x - ELLIPSE.cx * WORK) / (ELLIPSE.rx * WORK);
           const ny = (y - ELLIPSE.cy * WORK) / (ELLIPSE.ry * WORK);
           if (nx * nx + ny * ny > 1) continue;
-          if (chroma <= CHROMA_T && lum >= DARK_T) continue; // gray bg / suit / collar
+          if (warm < -5) continue; // foliage / blue sky
+          if (gb > 30 && warm < 15) continue; // yellow-green foliage
+          if (lum > 0.8 && warm < 15) continue; // white sky
+          if (warm > 100) continue; // bright red shirt
+          if (warm > 40 && gb < -10) continue; // pink shirt / shirt shadow
 
           let tone = 1 - lum; // ink halftone: dark → big dot
-          tone = Math.min(1, Math.max(0, (tone - 0.25) / 0.72)) ** 0.9;
+          tone = Math.min(1, Math.max(0, (tone - 0.18) / 0.78)) ** 0.95;
           if (tone <= 0.02) continue;
 
           particles.push({
             x,
             y,
-            rad: 0.15 + tone * 1.15,
-            alpha: 0.3 + tone * 0.55,
+            rad: 0.12 + tone * 0.8,
+            alpha: 0.28 + tone * 0.6,
             depth: lum - 0.4,
             phase: ((x * 7919 + y * 104729) % 628) / 100, // deterministic 0..2π
           });
