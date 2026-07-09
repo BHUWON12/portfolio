@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import ParticleFace from "@/components/ParticleFace";
 
 /* ============================================================
    BHUWAN SINGH — a minimal portfolio that generates itself.
@@ -403,57 +404,63 @@ export default function Index() {
         style={{ maxWidth: 900, paddingTop: 72, paddingBottom: 56 }}
       >
         {/* ---------- name ---------- */}
-        <header className="rise">
-          <h1
-            style={{
-              fontFamily: DISPLAY,
-              fontWeight: 600,
-              fontSize: "clamp(2.6rem, 7vw, 5rem)",
-              lineHeight: 1.05,
-              letterSpacing: "-0.03em",
-              margin: 0,
-            }}
-          >
-            {PROFILE.first} {PROFILE.last}
-            <span style={{ color: ACCENT }}>.</span>
-          </h1>
-          <div
-            className="flex flex-wrap items-baseline justify-between"
-            style={{ marginTop: 22, gap: "8px 16px" }}
-          >
-            <div
+        <header
+          className="rise flex flex-wrap items-center"
+          style={{ gap: "28px 40px" }}
+        >
+          <div style={{ flex: "1 1 380px", minWidth: 280 }}>
+            <h1
               style={{
-                fontFamily: MONO,
-                fontSize: 12.5,
-                letterSpacing: "0.22em",
-                color: DIM,
-                textTransform: "uppercase",
+                fontFamily: DISPLAY,
+                fontWeight: 600,
+                fontSize: "clamp(2.6rem, 7vw, 5rem)",
+                lineHeight: 1.05,
+                letterSpacing: "-0.03em",
+                margin: 0,
               }}
             >
-              {PROFILE.role} — {PROFILE.focus}
-            </div>
-            <div className="flex gap-4">
-              <a href={`mailto:${PROFILE.email}`} style={smallLink}>
-                email
-              </a>
-              <a
-                href={`https://${PROFILE.github}`}
-                target="_blank"
-                rel="noreferrer"
-                style={smallLink}
+              {PROFILE.first} {PROFILE.last}
+              <span style={{ color: ACCENT }}>.</span>
+            </h1>
+            <div
+              className="flex flex-wrap items-baseline justify-between"
+              style={{ marginTop: 22, gap: "8px 16px" }}
+            >
+              <div
+                style={{
+                  fontFamily: MONO,
+                  fontSize: 12.5,
+                  letterSpacing: "0.22em",
+                  color: DIM,
+                  textTransform: "uppercase",
+                }}
               >
-                github
-              </a>
-              <a
-                href={`https://${PROFILE.linkedin}`}
-                target="_blank"
-                rel="noreferrer"
-                style={smallLink}
-              >
-                linkedin
-              </a>
+                {PROFILE.role} — {PROFILE.focus}
+              </div>
+              <div className="flex gap-4">
+                <a href={`mailto:${PROFILE.email}`} style={smallLink}>
+                  email
+                </a>
+                <a
+                  href={`https://${PROFILE.github}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={smallLink}
+                >
+                  github
+                </a>
+                <a
+                  href={`https://${PROFILE.linkedin}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={smallLink}
+                >
+                  linkedin
+                </a>
+              </div>
             </div>
           </div>
+          <ParticleFace size={210} accent={ACCENT} />
         </header>
 
         <div style={{ height: 1, background: FAINT, marginTop: 30 }} />
