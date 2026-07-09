@@ -7,6 +7,11 @@ import { useEffect, useRef, useState } from "react";
  * the real loss (mean particle distance from home) ticking down until it
  * converges. Click/tap re-initializes and retrains. Canvas 2D only.
  *
+ * While training it reads like a miniature tensorboard: sparse "network"
+ * edges wire nearby particles together, a sparkline under the portrait plots
+ * the loss curve (log scale), and dots sharpen as they lock onto their home
+ * pixel. All of it fades out on convergence, leaving the clean portrait.
+ *
  * Extras: cursor pushes dots aside (they spring back), whole-head parallax
  * follows the mouse, idle shimmer when converged. prefers-reduced-motion →
  * one static frame, no listeners.
@@ -32,6 +37,8 @@ const TILT_X = 6; // parallax amplitude, CSS px
 const TILT_Y = 5;
 const TILT_EASE = 0.06;
 const DRIFT = 0.3; // idle vertical drift amplitude, CSS px
+const SPARK_H = 14; // loss sparkline strip height, CSS px
+const SPARK_PTS = 90; // sparkline history length
 
 const MONO = "'IBM Plex Mono', ui-monospace, Menlo, monospace";
 
@@ -63,9 +70,10 @@ export default function ParticleFace({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const fullH = size + SPARK_H + 4; // face + loss sparkline strip
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = size * dpr;
-    canvas.height = size * dpr;
+    canvas.height = fullH * dpr;
     ctx.scale(dpr, dpr);
 
     const scale = size / WORK;
@@ -83,6 +91,7 @@ export default function ParticleFace({
     let alp: Float32Array; // rest opacity
     let dep: Float32Array; // -0.4..0.6, brighter regions sit "closer"
     let phs: Float32Array; // deterministic phase 0..2π
+    let edges: Int32Array; // sparse pairs of nearby particles ("network" wiring)
 
     let raf = 0;
     let running = false;
@@ -92,6 +101,9 @@ export default function ParticleFace({
     let trainStart = -1; // rAF timestamp the current run began
     let converged = false;
     let capTick = 0;
+    let lastLoss = 1; // previous frame's loss, drives edge/sharpen fades
+    let sparkA = 0; // sparkline visibility, eased
+    let lossHist: number[] = [];
     const tilt = { x: 0, y: 0 };
     const target = { x: 0, y: 0 };
     const mouse = { x: 0, y: 0, in: false };
@@ -171,6 +183,17 @@ export default function ParticleFace({
         dep[k] = lum - 0.4;
         phs[k] = ((x * 7919 + y * 104729) % 628) / 100; // deterministic 0..2π
       }
+
+      // sparse local pairs — the "network" wiring shown while training
+      const ep: number[] = [];
+      for (let k = 0; k < N; k += 17) {
+        const j = k + 1 + ((k * 7) % 97);
+        if (j >= N) continue;
+        const dx = hx[k] - hx[j];
+        const dy = hy[k] - hy[j];
+        if (dx * dx + dy * dy < 900) ep.push(k, j); // within 30 CSS px
+      }
+      edges = new Int32Array(ep);
     };
 
     // random init — the state a "training run" starts from
@@ -183,6 +206,8 @@ export default function ParticleFace({
       }
       trainStart = -1; // stamped on the next frame
       converged = false;
+      lastLoss = 1;
+      lossHist = [];
     };
 
     const snapHome = () => {
@@ -195,7 +220,7 @@ export default function ParticleFace({
     };
 
     const drawStatic = () => {
-      ctx.clearRect(0, 0, size, size);
+      ctx.clearRect(0, 0, size, fullH);
       ctx.fillStyle = accent;
       for (let k = 0; k < N; k++) {
         ctx.globalAlpha = alp[k];
@@ -220,7 +245,25 @@ export default function ParticleFace({
       const mIn = mouse.in;
       const r2 = REPEL_R * REPEL_R;
 
-      ctx.clearRect(0, 0, size, size);
+      ctx.clearRect(0, 0, size, fullH);
+
+      // network wiring between neighbor dots — visible only while loss is high
+      const edgeA = Math.min(0.22, (lastLoss - 0.006) * 1.4);
+      if (edgeA > 0.005 && edges.length) {
+        ctx.strokeStyle = accent;
+        ctx.globalAlpha = edgeA;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        for (let e = 0; e < edges.length; e += 2) {
+          const a = edges[e];
+          const b = edges[e + 1];
+          ctx.moveTo(px[a], py[a]);
+          ctx.lineTo(px[b], py[b]);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
       ctx.fillStyle = accent;
 
       let sumDist = 0;
@@ -233,7 +276,8 @@ export default function ParticleFace({
         const typ = hy[k] + dep[k] * toy;
         const ex = txp - px[k];
         const ey = typ - py[k];
-        sumDist += Math.sqrt(ex * ex + ey * ey);
+        const dist = Math.sqrt(ex * ex + ey * ey);
+        sumDist += dist;
         vx[k] = (vx[k] + ex * SPRING) * DAMP;
         vy[k] = (vy[k] + ey * SPRING) * DAMP;
 
@@ -259,7 +303,8 @@ export default function ParticleFace({
         px[k] += vx[k];
         py[k] += vy[k];
 
-        let a = alp[k];
+        // dots sharpen as they lock onto their home pixel
+        let a = alp[k] * (0.45 + 0.55 * (1 - Math.min(dist * 0.02, 1)));
         if (converged) a *= 1 + 0.08 * Math.sin(time * 2.2 - hy[k] * 0.05);
         ctx.globalAlpha = a > 0.9 ? 0.9 : a;
         const r = rad[k];
@@ -269,6 +314,37 @@ export default function ParticleFace({
 
       // loss = mean distance from target, normalized to canvas size
       const loss = sumDist / (N || 1) / size;
+      lastLoss = loss;
+
+      // loss-curve sparkline (log scale), fades out once converged
+      if (capTick % 4 === 0 && !converged) {
+        lossHist.push(loss);
+        if (lossHist.length > SPARK_PTS) lossHist.shift();
+      }
+      sparkA += ((converged ? 0 : 1) - sparkA) * 0.04;
+      if (sparkA > 0.01 && lossHist.length > 1) {
+        ctx.strokeStyle = accent;
+        ctx.globalAlpha = 0.45 * sparkA;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        let ex2 = 0;
+        let ey2 = 0;
+        for (let i = 0; i < lossHist.length; i++) {
+          const v = Math.min(
+            1,
+            Math.max(0, (Math.log10(Math.max(lossHist[i], 1e-4)) + 4) / 4),
+          );
+          ex2 = (i / (lossHist.length - 1)) * size;
+          ey2 = size + 3 + (1 - v) * SPARK_H;
+          if (i === 0) ctx.moveTo(ex2, ey2);
+          else ctx.lineTo(ex2, ey2);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 0.8 * sparkA; // live endpoint marker
+        ctx.fillRect(ex2 - 1.5, ey2 - 1.5, 3, 3);
+        ctx.globalAlpha = 1;
+      }
+
       if (!converged && elapsed > CONVERGE_MS && loss < 0.004) {
         converged = true;
         setCaption("converged · tap to retrain");
@@ -376,7 +452,7 @@ export default function ParticleFace({
         aria-hidden="true"
         style={{
           width: size,
-          height: size,
+          height: size + SPARK_H + 4,
           cursor: "pointer",
           touchAction: "manipulation",
         }}
