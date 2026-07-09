@@ -1,46 +1,60 @@
 import { useEffect, useRef, useState } from "react";
 
 /*
- * Particle-hologram portrait: the photo rebuilt as an ink-halftone field of
- * accent-colored dots (darker photo regions → larger dots), with mouse-tilt
- * parallax and a slow scanline shimmer. Canvas 2D only, no dependencies.
+ * Particle-hologram portrait, styled as a model training run: the dots start
+ * as random noise and "learn" the face — springs pull each particle to its
+ * home pixel while an annealing jitter decays, and a tiny mono caption shows
+ * the real loss (mean particle distance from home) ticking down until it
+ * converges. Click/tap re-initializes and retrains. Canvas 2D only.
  *
- * Sampling constants below are tuned to public/portrait.jpg — an outdoor
- * shot with foliage/sky behind and a red shirt. The head is isolated by
- * color: skin and hair are warm-to-neutral, while foliage reads green
- * (G > R), sky reads bright-neutral/blue, and the shirt reads saturated
- * pink-red — all three are rejected, plus an elliptical head mask.
+ * Extras: cursor pushes dots aside (they spring back), whole-head parallax
+ * follows the mouse, idle shimmer when converged. prefers-reduced-motion →
+ * one static frame, no listeners.
+ *
+ * Sampling constants are tuned to public/portrait.jpg — an outdoor shot with
+ * foliage/sky behind and a red shirt. The head is isolated by color: skin and
+ * hair are warm-to-neutral, while foliage reads green (G > R), sky reads
+ * bright-neutral, and the shirt reads saturated pink-red — all rejected,
+ * plus an elliptical head mask.
  */
 
-const WORK = 360; // working resolution the image is sampled at
-const STEP = 2; // sample grid spacing (working px) → ~15-18k particles
+const WORK = 300; // working resolution the image is sampled at
+const STEP = 3; // sample grid spacing (working px) → ~5-6k particles
 const ELLIPSE = { cx: 0.5, cy: 0.5, rx: 0.47, ry: 0.5 }; // head mask, fractions of WORK
-const TILT_X = 14; // parallax amplitude, working px
-const TILT_Y = 10;
-const DRIFT = 0.5; // idle vertical drift amplitude, working px
-const TILT_EASE = 0.06;
 
-interface Particle {
-  x: number;
-  y: number;
-  rad: number; // rest radius, working px
-  alpha: number; // rest opacity
-  depth: number; // -0.4..0.6, brighter photo regions sit "closer"
-  phase: number;
-}
+const SPRING = 0.06; // pull toward home per frame
+const DAMP = 0.88; // velocity damping per frame
+const ANNEAL_MS = 2600; // how long training noise takes to die out
+const CONVERGE_MS = 1400; // earliest the run may report convergence
+const REPEL_R = 48; // cursor repulsion radius, CSS px
+const REPEL_F = 1.6; // cursor repulsion strength
+const TILT_X = 6; // parallax amplitude, CSS px
+const TILT_Y = 5;
+const TILT_EASE = 0.06;
+const DRIFT = 0.3; // idle vertical drift amplitude, CSS px
+
+const MONO = "'IBM Plex Mono', ui-monospace, Menlo, monospace";
+
+const hash = (k: number) => {
+  const s = Math.sin(k * 12.9898) * 43758.5453;
+  return s - Math.floor(s);
+};
 
 interface ParticleFaceProps {
   src?: string;
   size?: number; // CSS px, square
   accent?: string;
+  dim?: string; // caption color
 }
 
 export default function ParticleFace({
   src = "/portrait.jpg",
-  size = 210,
+  size = 160,
   accent = "#2E4FE0",
+  dim = "#8B8F98",
 }: ParticleFaceProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const captionRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -57,14 +71,34 @@ export default function ParticleFace({
     const scale = size / WORK;
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-    const particles: Particle[] = [];
+    // structure-of-arrays particle store (filled by sample())
+    let N = 0;
+    let hx: Float32Array; // home position, CSS px
+    let hy: Float32Array;
+    let px: Float32Array; // current position
+    let py: Float32Array;
+    let vx: Float32Array; // velocity
+    let vy: Float32Array;
+    let rad: Float32Array; // dot radius, CSS px
+    let alp: Float32Array; // rest opacity
+    let dep: Float32Array; // -0.4..0.6, brighter regions sit "closer"
+    let phs: Float32Array; // deterministic phase 0..2π
+
     let raf = 0;
     let running = false;
     let visible = true;
     let inView = true;
     let disposed = false;
+    let trainStart = -1; // rAF timestamp the current run began
+    let converged = false;
+    let capTick = 0;
     const tilt = { x: 0, y: 0 };
     const target = { x: 0, y: 0 };
+    const mouse = { x: 0, y: 0, in: false };
+
+    const setCaption = (text: string) => {
+      if (captionRef.current) captionRef.current.textContent = text;
+    };
 
     const sample = (img: HTMLImageElement) => {
       const off = document.createElement("canvas");
@@ -86,6 +120,7 @@ export default function ParticleFace({
       );
       const data = octx.getImageData(0, 0, WORK, WORK).data;
 
+      const keep: number[] = [];
       for (let y = 0; y < WORK; y += STEP) {
         for (let x = 0; x < WORK; x += STEP) {
           const i = (y * WORK + x) * 4;
@@ -106,69 +141,180 @@ export default function ParticleFace({
           if (warm > 40 && gb < -10) continue; // pink shirt / shirt shadow
 
           let tone = 1 - lum; // ink halftone: dark → big dot
-          tone = Math.min(1, Math.max(0, (tone - 0.18) / 0.78)) ** 0.95;
-          if (tone <= 0.02) continue;
-
-          particles.push({
-            x,
-            y,
-            rad: 0.12 + tone * 0.8,
-            alpha: 0.28 + tone * 0.6,
-            depth: lum - 0.4,
-            phase: ((x * 7919 + y * 104729) % 628) / 100, // deterministic 0..2π
-          });
+          tone = Math.min(1, Math.max(0, (tone - 0.13) / 0.83)) ** 0.95;
+          tone = Math.max(tone, 0.07); // faint floor keeps the silhouette solid
+          keep.push(x, y, tone, lum);
         }
+      }
+
+      N = keep.length / 4;
+      hx = new Float32Array(N);
+      hy = new Float32Array(N);
+      px = new Float32Array(N);
+      py = new Float32Array(N);
+      vx = new Float32Array(N);
+      vy = new Float32Array(N);
+      rad = new Float32Array(N);
+      alp = new Float32Array(N);
+      dep = new Float32Array(N);
+      phs = new Float32Array(N);
+
+      for (let k = 0; k < N; k++) {
+        const x = keep[k * 4];
+        const y = keep[k * 4 + 1];
+        const tone = keep[k * 4 + 2];
+        const lum = keep[k * 4 + 3];
+        hx[k] = x * scale;
+        hy[k] = y * scale;
+        rad[k] = (0.24 + tone * 1.0) * scale;
+        alp[k] = 0.22 + tone * 0.58;
+        dep[k] = lum - 0.4;
+        phs[k] = ((x * 7919 + y * 104729) % 628) / 100; // deterministic 0..2π
       }
     };
 
-    const drawFrame = (time: number, motion: boolean) => {
+    // random init — the state a "training run" starts from
+    const scatter = () => {
+      for (let k = 0; k < N; k++) {
+        px[k] = hash(k) * size;
+        py[k] = hash(k + 0.37) * size;
+        vx[k] = 0;
+        vy[k] = 0;
+      }
+      trainStart = -1; // stamped on the next frame
+      converged = false;
+    };
+
+    const snapHome = () => {
+      for (let k = 0; k < N; k++) {
+        px[k] = hx[k];
+        py[k] = hy[k];
+        vx[k] = 0;
+        vy[k] = 0;
+      }
+    };
+
+    const drawStatic = () => {
       ctx.clearRect(0, 0, size, size);
       ctx.fillStyle = accent;
-      for (const p of particles) {
-        let x = p.x;
-        let y = p.y;
-        let a = p.alpha;
-        if (motion) {
-          x += p.depth * tilt.x * TILT_X;
-          y += p.depth * tilt.y * TILT_Y;
-          y += Math.sin(time * 1.4 + p.x * 0.04 + p.phase) * DRIFT;
-          a *= 1 + 0.12 * Math.sin(time * 2.2 - p.y * 0.09);
-        }
-        ctx.globalAlpha = a < 0 ? 0 : a > 0.95 ? 0.95 : a;
-        const r = p.rad * scale;
-        ctx.fillRect(x * scale - r, y * scale - r, r * 2, r * 2);
+      for (let k = 0; k < N; k++) {
+        ctx.globalAlpha = alp[k];
+        const r = rad[k];
+        ctx.fillRect(hx[k] - r, hy[k] - r, r * 2, r * 2);
       }
       ctx.globalAlpha = 1;
     };
 
     const frame = (t: number) => {
       raf = requestAnimationFrame(frame);
+      const time = t * 0.001;
+
+      if (trainStart < 0) trainStart = t;
+      const elapsed = t - trainStart;
+      const anneal = converged ? 0 : Math.max(0, 1 - elapsed / ANNEAL_MS);
+
       tilt.x += (target.x - tilt.x) * TILT_EASE;
       tilt.y += (target.y - tilt.y) * TILT_EASE;
-      drawFrame(t * 0.001, true);
+      const tox = tilt.x * TILT_X;
+      const toy = tilt.y * TILT_Y;
+      const mIn = mouse.in;
+      const r2 = REPEL_R * REPEL_R;
+
+      ctx.clearRect(0, 0, size, size);
+      ctx.fillStyle = accent;
+
+      let sumDist = 0;
+      for (let k = 0; k < N; k++) {
+        // spring toward home + parallax + idle drift
+        const txp =
+          hx[k] +
+          dep[k] * tox +
+          Math.sin(time * 1.4 + hx[k] * 0.08 + phs[k]) * DRIFT;
+        const typ = hy[k] + dep[k] * toy;
+        const ex = txp - px[k];
+        const ey = typ - py[k];
+        sumDist += Math.sqrt(ex * ex + ey * ey);
+        vx[k] = (vx[k] + ex * SPRING) * DAMP;
+        vy[k] = (vy[k] + ey * SPRING) * DAMP;
+
+        // stochastic "gradient noise", annealed away over the run
+        if (anneal > 0) {
+          vx[k] += Math.sin(time * 17 + phs[k] * 11) * 0.5 * anneal;
+          vy[k] += Math.cos(time * 15 + phs[k] * 7) * 0.5 * anneal;
+        }
+
+        // cursor repulsion
+        if (mIn) {
+          const dx = px[k] - mouse.x;
+          const dy = py[k] - mouse.y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < r2 && d2 > 0.01) {
+            const d = Math.sqrt(d2);
+            const f = ((1 - d / REPEL_R) * (1 - d / REPEL_R) * REPEL_F) / d;
+            vx[k] += dx * f;
+            vy[k] += dy * f;
+          }
+        }
+
+        px[k] += vx[k];
+        py[k] += vy[k];
+
+        let a = alp[k];
+        if (converged) a *= 1 + 0.08 * Math.sin(time * 2.2 - hy[k] * 0.05);
+        ctx.globalAlpha = a > 0.9 ? 0.9 : a;
+        const r = rad[k];
+        ctx.fillRect(px[k] - r, py[k] - r, r * 2, r * 2);
+      }
+      ctx.globalAlpha = 1;
+
+      // loss = mean distance from target, normalized to canvas size
+      const loss = sumDist / (N || 1) / size;
+      if (!converged && elapsed > CONVERGE_MS && loss < 0.004) {
+        converged = true;
+        setCaption("converged · tap to retrain");
+      }
+      if (!converged && ++capTick % 8 === 0) {
+        const epoch = Math.min(99, Math.floor(elapsed / 400) + 1);
+        setCaption(
+          `epoch ${String(epoch).padStart(2, "0")} · loss ${loss.toFixed(4)}`,
+        );
+      }
     };
 
     const syncRunning = () => {
-      const shouldRun =
-        !disposed &&
-        particles.length > 0 &&
-        visible &&
-        inView &&
-        !mq.matches;
+      const shouldRun = !disposed && N > 0 && visible && inView && !mq.matches;
       if (shouldRun && !running) {
         running = true;
         raf = requestAnimationFrame(frame);
       } else if (!shouldRun && running) {
         running = false;
         cancelAnimationFrame(raf);
-        if (mq.matches && particles.length) drawFrame(0, false);
+        if (mq.matches && N) {
+          snapHome();
+          drawStatic();
+          setCaption(`${(N / 1000).toFixed(1)}k pts`);
+        }
       }
     };
 
     const onMouseMove = (e: MouseEvent) => {
       target.x = (e.clientX / window.innerWidth) * 2 - 1;
       target.y = (e.clientY / window.innerHeight) * 2 - 1;
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+      mouse.in =
+        mouse.x > -REPEL_R &&
+        mouse.x < size + REPEL_R &&
+        mouse.y > -REPEL_R &&
+        mouse.y < size + REPEL_R;
     };
+
+    const onClick = () => {
+      if (mq.matches || N === 0) return;
+      scatter();
+    };
+
     const onVisibility = () => {
       visible = document.visibilityState === "visible";
       syncRunning();
@@ -182,6 +328,7 @@ export default function ParticleFace({
     observer.observe(canvas);
 
     window.addEventListener("mousemove", onMouseMove);
+    canvas.addEventListener("click", onClick);
     document.addEventListener("visibilitychange", onVisibility);
     mq.addEventListener("change", onMotionPref);
 
@@ -190,8 +337,15 @@ export default function ParticleFace({
       if (disposed) return;
       sample(img);
       setLoaded(true);
-      if (mq.matches) drawFrame(0, false);
-      else syncRunning();
+      if (mq.matches) {
+        snapHome();
+        drawStatic();
+        setCaption(`${(N / 1000).toFixed(1)}k pts`);
+      } else {
+        scatter();
+        setCaption("epoch 01 · loss —");
+        syncRunning();
+      }
     };
     img.src = src;
 
@@ -199,6 +353,7 @@ export default function ParticleFace({
       disposed = true;
       cancelAnimationFrame(raf);
       window.removeEventListener("mousemove", onMouseMove);
+      canvas.removeEventListener("click", onClick);
       document.removeEventListener("visibilitychange", onVisibility);
       mq.removeEventListener("change", onMotionPref);
       observer.disconnect();
@@ -206,15 +361,38 @@ export default function ParticleFace({
   }, [src, size, accent]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden="true"
+    <div
       style={{
-        width: size,
-        height: size,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 6,
         opacity: loaded ? 1 : 0,
         transition: "opacity .6s ease",
       }}
-    />
+    >
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        style={{
+          width: size,
+          height: size,
+          cursor: "pointer",
+          touchAction: "manipulation",
+        }}
+      />
+      <div
+        ref={captionRef}
+        aria-hidden="true"
+        style={{
+          fontFamily: MONO,
+          fontSize: 9.5,
+          letterSpacing: "0.14em",
+          color: dim,
+          whiteSpace: "nowrap",
+          userSelect: "none",
+        }}
+      />
+    </div>
   );
 }
